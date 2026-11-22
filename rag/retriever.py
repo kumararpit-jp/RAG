@@ -1,8 +1,9 @@
-"""Dense retrieval over chunk embeddings using cosine similarity."""
+"""Dense, keyword (BM25) and hybrid retrieval over document chunks."""
 from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 
+from .bm25 import BM25
 from .chunking import Chunk
 
 
@@ -47,12 +48,47 @@ class DenseIndex:
         return [(int(i), float(scores[i])) for i in top]
 
 
-class DenseRetriever:
-    def __init__(self, chunks: Sequence[Chunk], embedder):
+def reciprocal_rank_fusion(rankings: Sequence[Sequence[int]], k: int = 60) -> List[Tuple[int, float]]:
+    """Merge ranked id lists: score(d) = sum over lists of 1 / (k + rank of d).
+    Uses ranks only, so BM25 and cosine scores never need to be put on one scale."""
+    scores = {}
+    for ranking in rankings:
+        for rank, doc_id in enumerate(ranking, start=1):
+            scores[doc_id] = scores.get(doc_id, 0.0) + 1.0 / (k + rank)
+    return sorted(scores.items(), key=lambda item: (-item[1], item[0]))
+
+
+class Retriever:
+    """Retrieves chunks with dense (embedding) search, BM25 keyword search, or a
+    hybrid of both fused with Reciprocal Rank Fusion."""
+
+    MODES = ("dense", "bm25", "hybrid")
+
+    def __init__(self, chunks: Sequence[Chunk], embedder=None, mode: str = "hybrid",
+                 candidate_pool: int = 20):
+        if mode not in self.MODES:
+            raise ValueError(f"mode must be one of {self.MODES}")
+        if mode != "bm25" and embedder is None:
+            raise ValueError(f"mode '{mode}' needs an embedder")
         self.chunks = list(chunks)
         self.embedder = embedder
-        self.index = DenseIndex(embedder.encode([c.text for c in self.chunks]))
+        self.mode = mode
+        self.candidate_pool = candidate_pool
+        texts = [chunk.text for chunk in self.chunks]
+        self.dense = DenseIndex(embedder.encode(texts)) if mode != "bm25" else None
+        self.bm25 = BM25(texts) if mode != "dense" else None
+
+    def _dense_search(self, query: str, k: int):
+        return self.dense.search(self.embedder.encode([query]), k)
 
     def retrieve(self, query: str, k: int = 3) -> List[Tuple[Chunk, float]]:
-        hits = self.index.search(self.embedder.encode([query]), k)
+        if self.mode == "dense":
+            hits = self._dense_search(query, k)
+        elif self.mode == "bm25":
+            hits = self.bm25.search(query, k)
+        else:
+            pool = max(k, self.candidate_pool)
+            dense_ids = [i for i, _ in self._dense_search(query, pool)]
+            keyword_ids = [i for i, _ in self.bm25.search(query, pool)]
+            hits = reciprocal_rank_fusion([dense_ids, keyword_ids])[:k]
         return [(self.chunks[i], score) for i, score in hits]

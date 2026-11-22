@@ -7,11 +7,14 @@ from .embeddings import SentenceTransformerEmbedder
 from .generator import FlanT5Generator
 from .loader import load_documents
 from .pipeline import Answer, RAGPipeline
+from .retriever import Retriever
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Offline Q&A over local PDF/TXT documents (RAG).")
     parser.add_argument("path", help="A .pdf/.txt file or a folder containing them")
+    parser.add_argument("--mode", choices=Retriever.MODES, default="hybrid",
+                        help="dense = embeddings, bm25 = keywords, hybrid = both fused with RRF")
     parser.add_argument("--top-k", type=int, default=3, help="Chunks passed to the model")
     parser.add_argument("--chunk-size", type=int, default=200, help="Words per chunk")
     parser.add_argument("--overlap", type=int, default=40, help="Words shared by neighbouring chunks")
@@ -44,12 +47,8 @@ def main(argv=None) -> None:
     n_files = len({page.source for page in pages})
     print(f"Loaded {n_files} file(s), {len(pages)} page(s) -> {len(chunks)} chunks. Loading models...")
 
-    rag = RAGPipeline(
-        chunks,
-        SentenceTransformerEmbedder(args.embed_model),
-        FlanT5Generator(args.llm),
-        top_k=args.top_k,
-    )
+    embedder = None if args.mode == "bm25" else SentenceTransformerEmbedder(args.embed_model)
+    rag = RAGPipeline(chunks, embedder, FlanT5Generator(args.llm), mode=args.mode, top_k=args.top_k)
 
     if args.question:
         print_answer(rag.ask(args.question))
