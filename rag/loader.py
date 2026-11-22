@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
+SUPPORTED_EXTENSIONS = {".pdf", ".txt"}
+
 
 @dataclass
 class Page:
@@ -33,3 +35,22 @@ def load_file(path, source: Optional[str] = None) -> List[Page]:
         return [Page(source, 1, text)] if text else []
 
     raise ValueError(f"Unsupported file type '{path.suffix}'. Use .pdf or .txt")
+
+
+def load_documents(path) -> List[Page]:
+    """Load a single file, or every .pdf/.txt file under a folder (recursively)."""
+    path = Path(path)
+    if path.is_file():
+        return load_file(path)
+    if not path.is_dir():
+        raise FileNotFoundError(f"No such file or folder: {path}")
+
+    files = sorted(p for p in path.rglob("*") if p.suffix.lower() in SUPPORTED_EXTENSIONS)
+    if not files:
+        raise FileNotFoundError(f"No .pdf or .txt files found in {path}")
+
+    pages: List[Page] = []
+    for file in files:
+        # relative path keeps same-named files in different subfolders apart
+        pages.extend(load_file(file, source=file.relative_to(path).as_posix()))
+    return pages
