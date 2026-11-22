@@ -14,6 +14,7 @@ class SentenceTransformerEmbedder:
         vectors = self.model.encode(
             list(texts),
             convert_to_numpy=True,
+            normalize_embeddings=True,  # unit vectors -> inner product = cosine
             show_progress_bar=len(texts) > 32,
         )
         return np.asarray(vectors, dtype="float32")

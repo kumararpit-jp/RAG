@@ -14,7 +14,7 @@ class Answer:
 
 
 class RAGPipeline:
-    def __init__(self, chunks: Sequence[Chunk], embedder, generator, top_k: int = 2):
+    def __init__(self, chunks: Sequence[Chunk], embedder, generator, top_k: int = 3):
         self.retriever = DenseRetriever(chunks, embedder)
         self.generator = generator
         self.top_k = top_k

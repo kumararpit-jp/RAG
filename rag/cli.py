@@ -12,8 +12,9 @@ from .pipeline import Answer, RAGPipeline
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Offline Q&A over local PDF/TXT documents (RAG).")
     parser.add_argument("path", help="A .pdf/.txt file or a folder containing them")
-    parser.add_argument("--top-k", type=int, default=2, help="Chunks passed to the model")
-    parser.add_argument("--chunk-size", type=int, default=300, help="Words per chunk")
+    parser.add_argument("--top-k", type=int, default=3, help="Chunks passed to the model")
+    parser.add_argument("--chunk-size", type=int, default=200, help="Words per chunk")
+    parser.add_argument("--overlap", type=int, default=40, help="Words shared by neighbouring chunks")
     parser.add_argument("--embed-model", default="all-MiniLM-L6-v2")
     parser.add_argument("--llm", default="google/flan-t5-base")
     parser.add_argument("-q", "--question", help="Ask a single question and exit")
@@ -34,7 +35,10 @@ def main(argv=None) -> None:
         pages = load_documents(args.path)
     except (FileNotFoundError, ValueError) as error:
         sys.exit(str(error))
-    chunks = chunk_pages(pages, args.chunk_size)
+    try:
+        chunks = chunk_pages(pages, args.chunk_size, args.overlap)
+    except ValueError as error:
+        sys.exit(str(error))
     if not chunks:
         sys.exit("No text could be extracted from the documents.")
     n_files = len({page.source for page in pages})
