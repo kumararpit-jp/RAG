@@ -1,0 +1,9 @@
+IT Security Basics
+
+Passwords for company accounts must be at least 12 characters long and are rotated every 90 days. Multi-factor authentication is mandatory for email, source code repositories and the HR portal.
+
+Laptops are issued with full-disk encryption enabled. Employees must lock their screen whenever they step away from their desk, and devices automatically lock after five minutes of inactivity.
+
+Suspected phishing emails should be reported using the Report Phishing button in the mail client instead of being forwarded. Do not click links or open attachments in a suspicious email.
+
+Lost or stolen devices must be reported to the IT helpdesk within 24 hours so that the device can be remotely wiped. Personal USB storage drives are blocked on company laptops.

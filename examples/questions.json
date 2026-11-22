@@ -1,0 +1,12 @@
+[
+  {"question": "How many days of paid annual leave do full-time employees get?", "source": "leave_policy.txt"},
+  {"question": "Can I carry forward unused leave to next year?", "source": "leave_policy.txt"},
+  {"question": "When do I need a medical certificate?", "source": "leave_policy.txt"},
+  {"question": "How long is parental leave for a non-birthing parent?", "source": "leave_policy.txt"},
+  {"question": "I just joined as an intern. Can I work from home?", "source": "remote_work.txt"},
+  {"question": "What are the core collaboration hours?", "source": "remote_work.txt"},
+  {"question": "Is my home internet bill reimbursed?", "source": "remote_work.txt"},
+  {"question": "How long must my password be?", "source": "it_security.txt"},
+  {"question": "What should I do with a suspicious email?", "source": "it_security.txt"},
+  {"question": "My laptop was stolen, who do I tell?", "source": "it_security.txt"}
+]
